@@ -12,7 +12,7 @@ class TestSignal(TestCase):
         )
         product.save()
         with open(
-            "main/fixtures/the-cathedral-the-bazaar.jpg", "rb"
+            "main/fixtures/joker.jpg", "rb"
         ) as f:
             image = models.ProductImage(
                 product=product,
@@ -23,7 +23,7 @@ class TestSignal(TestCase):
         self.assertGreaterEqual(len(cm.output), 1)
         image.refresh_from_db()
         with open(
-            'main/fixtures/joker.jpg',
+            'main/fixtures/joker.thumb.jpg',
             'rb',
         ) as f:
             expected_content = f.read()
