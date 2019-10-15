@@ -2,6 +2,12 @@ from django.db import models
 
 # Create your models here.
 
+class ActiveManager(models.Manager):
+    ''' Returns the set of active products '''
+    def active(self):
+        return self.filter(active=True)
+
+
 class Product(models.Model):
     name = models.CharField(max_length=32)
     description = models.TextField(blank=True)
@@ -10,6 +16,9 @@ class Product(models.Model):
     active = models.BooleanField(default=True)
     is_stock = models.BooleanField(default=True)
     date_updated = models.DateTimeField(auto_now=True)
+
+    # Activating the custom manager
+    objects = ActiveManager()
 
     def __str__(self):
         return self.name
@@ -31,3 +40,4 @@ class ProductTag(models.Model):
     thumbnail = models.ImageField(
         upload_to='product-thumbnails', null=True
     )
+

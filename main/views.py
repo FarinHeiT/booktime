@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.views.generic.edit import FormView
-from main import forms
+from django.views.generic.list import ListView
+from django.shortcuts import get_object_or_404
+from main import forms, models
 
 class ContactUsView(FormView):
     template_name = 'contact_form.html'
