@@ -27,5 +27,9 @@ class ProductListView(ListView):
             )
 
         if self.tag:
+            products = models.Product.objects.all().filter(tags=self.tag)
+        else:
             products = models.Product.objects.active()
+        
+        return products.order_by('name')
 

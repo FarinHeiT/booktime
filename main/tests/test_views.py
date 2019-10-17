@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
-from main import forms 
+from decimal import Decimal
+
+from main import forms, models
 
 # Create your tests here.
 class TestPage(TestCase):
@@ -22,3 +24,56 @@ class TestPage(TestCase):
         self.assertTemplateUsed(response, 'contact_form.html')
         self.assertContains(response, 'BookTime')
         self.assertIsInstance(response.context['form'], forms.ContactForm)
+
+        def test_products_page_returns_acive(self):
+            models.Product.objects.create(
+                name='Joker',
+                slug='joker',
+                price=Decimal('8.00'),
+            )
+            models.Product.objects.create(
+                name='Batman',
+                slug='batman',
+                price=Decimal('7.00'),
+                active=False,
+            )
+            response = self.client.get(
+                reverse('products', kwargs={'tag':'all'})
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, 'BookTime')
+
+            product_list = models.Product.objects.active().order_by('name')
+            self.assertEqual(
+                list(response.context['objects_list']),
+                list(product_list),
+            )
+
+        def test_products_page_filters_by_tags_and_active(self):
+            joker = models.Product.objects.create(
+                name='Joker',
+                slug='joker',
+                price=Decimal('8.00'),
+            )
+            joker.tags.create(name='Open Source', slug='opensource')
+            models.Product.objects.create(
+                name='Batman',
+                slug='batman',
+                price=Decimal('15.00')
+            )
+            response = self.client.get(
+                reverse('products', kwargs={'tag':'opensource'})
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, 'BookTime')
+
+            product_list = (
+                models.Product.objects.active()
+                .filter(tags__slug='opensource')
+                .order_by('name')
+                )
+
+            self.assertEqual(
+                list(response.context['objects_list']),
+                list(product_list),
+            )
