@@ -17,4 +17,5 @@ urlpatterns = [
         DetailView.as_view(model=models.Product),
         name='product'
     ),
+    path('signup/', views.SignupView.as_view(), name='signup')
 ]
