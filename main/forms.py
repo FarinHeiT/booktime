@@ -48,5 +48,5 @@ class UserCreationForm(DjangoUserCreationForm):
             message,
             'site@booktime.domain',
             [self.cleaned_data['email']],
-            fail_silently=True,
+            fail_silently=False,
         )
