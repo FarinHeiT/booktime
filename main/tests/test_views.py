@@ -125,5 +125,57 @@ class TestPage(TestCase):
         }
         response = self.client.post(reverse('signup'), post_data)
         self.assertEqual(response.status_code, 200)
-        print(response)
-        # self.assertContains(response, 'The two password fields didn\'t match.')
+        # Escaping single quotation mark
+        self.assertContains(response, "The two password fields didn&#39;t match.")
+
+
+    def test_user_login_page_loads_correctly(self):
+        response = self.client.get(reverse('login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'login.html')
+        self.assertContains(response, 'BookTime')
+        self.assertIsInstance(
+            response.context['form'], forms.AuthenticationForm
+        )
+
+
+    def test_user_login_page_submission_works(self):
+        #  creating test user
+        post_data = {
+            'email': 'test@domain.com',
+            'password1': '123123123qwe',
+            'password2': '123123123qwe',
+        }
+        response = self.client.post(reverse('signup'), post_data)
+
+        post_data = {
+            'email': 'test@domain.com',
+            'password1': '123123123qwe',
+        }
+
+        # trying to log in
+        response = self.client.post(reverse('login'), post_data)
+        
+        self.assertEqual(response.status_code, 200)
+
+        self.assertTrue(
+            auth.get_user(self.client).is_authenticated
+        )
+
+
+    def test_user_login_page_bad_submission(self):
+        #  creating test user
+
+        post_data = {
+            'email': 'never@ever.com',
+            'password1': 'doesntexist',
+        }
+
+        # trying to log in
+        response = self.client.post(reverse('login'), post_data)
+        
+        self.assertEqual(response.status_code, 200)
+
+        self.assertFalse(
+            auth.get_user(self.client).is_authenticated
+        )
