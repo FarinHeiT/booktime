@@ -4,10 +4,13 @@ from django.contrib.auth.models import (
     BaseUserManager,
 )
 from django.core.validators import MinValueValidator
+
+
 # Create your models here.
 
 class ActiveManager(models.Manager):
-    ''' Returns the set of active products '''
+    """ Returns the set of active products """
+
     def active(self):
         return self.filter(active=True)
 
@@ -29,12 +32,10 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-
     def create_user(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
         return self._create_user(email, password, **extra_fields)
-
 
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
@@ -73,11 +74,10 @@ class ProductTag(models.Model):
     def __str__(self):
         return self.name
 
-    
     def natural_key(self):
-        return (self.slug,)
+        return self.slug,
 
-    
+
 class Product(models.Model):
     name = models.CharField(max_length=32)
     description = models.TextField(blank=True)
@@ -94,9 +94,8 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
-    
     def natural_key(self):
-        return (self.slug,)
+        return self.slug,
 
 
 class ProductImage(models.Model):
@@ -130,6 +129,7 @@ class Address(models.Model):
     country = models.CharField(
         max_length=3, choices=SUPPORTED_COUNTRIES
     )
+
     def __str__(self):
         return ', '.join(
             [
@@ -156,7 +156,6 @@ class Basket(models.Model):
     def is_empty(self):
         return self.basketline_set.all().count() == 0
 
-    
     def count(self):
         return sum(i.quantity for i in self.basketline_set.all())
 

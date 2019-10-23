@@ -72,9 +72,9 @@ class TestPage(TestCase):
 
         product_list = (
             models.Product.objects.active()
-            .filter(tags__slug='opensource')
-            .order_by('name')
-            )
+                .filter(tags__slug='opensource')
+                .order_by('name')
+        )
 
         self.assertEqual(
             list(response.context['object_list']),
@@ -91,7 +91,7 @@ class TestPage(TestCase):
             response.context['form'], forms.UserCreationForm
         )
 
-        
+
     def test_user_signup_page_submission_works(self):
         post_data = {
             'email': 'test@domain.com',
@@ -99,12 +99,12 @@ class TestPage(TestCase):
             'password2': '123123123qwe',
         }
         with patch.object(
-            forms.UserCreationForm, 'send_mail'
+                forms.UserCreationForm, 'send_mail'
         ) as mock_send:
             response = self.client.post(
                 reverse('signup'), post_data
             )
-        
+
         self.assertEqual(response.status_code, 302)
         self.assertTrue(
             models.User.objects.filter(
@@ -116,7 +116,7 @@ class TestPage(TestCase):
         )
         mock_send.assert_called_once()
 
-        
+
     def test_user_signup_page_bad_submission(self):
         post_data = {
             'email': 'test@domain.com',
@@ -155,7 +155,7 @@ class TestPage(TestCase):
 
         # trying to log in
         response = self.client.post(reverse('login'), post_data)
-        
+
         self.assertEqual(response.status_code, 200)
 
         self.assertTrue(
@@ -173,14 +173,14 @@ class TestPage(TestCase):
 
         # trying to log in
         response = self.client.post(reverse('login'), post_data)
-        
+
         self.assertEqual(response.status_code, 200)
 
         self.assertFalse(
             auth.get_user(self.client).is_authenticated
         )
 
-    
+
     def test_address_list_page_returns_only_owned(self):
         user1 = models.User.objects.create_user(
             'user1', 'topsecret'
@@ -235,4 +235,49 @@ class TestPage(TestCase):
         )
         self.assertTrue(
             models.Address.objects.filter(user=user1).exists()
+        )
+
+    def test_add_to_basket_loggedin_works(self):
+        user1 = models.User.objects.create_user(
+            'user1@a.com', 'topsecret'
+        )
+
+        j = models.Product.objects.create(
+            name='Joker',
+            slug='joker',
+            price= Decimal('10.00'),
+        )
+
+        b = models.Product.objects.create(
+            name='Batman',
+            slug='batman',
+            price= Decimal('15.00'),
+        )
+
+        self.client.force_login(user1)
+        response = self.client.get(
+            reverse('add_to_basket'), {'product_id': j.id}
+        )
+        response = self.client.get(
+            reverse('add_to_basket'), {'product_id': j.id}
+        )
+
+        self.assertTrue(
+            models.Basket.objects.filter(user=user1).exists()
+        )
+        self.assertEqual(
+            models.Basketline.objects.filter(
+                basket__user=user1
+            ).count(),
+            1,
+        )
+
+        response = self.client.get(
+            reverse('add_to_basket'), {'product_id': b.id}
+        )
+        self.assertEqual(
+            models.Basketline.objects.filter(
+                basket__user=user1
+            ).count(),
+            2,
         )
