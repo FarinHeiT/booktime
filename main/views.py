@@ -44,11 +44,12 @@ class ProductListView(ListView):
             products = models.Product.objects.all().filter(tags=self.tag)
         else:
             products = models.Product.objects.active()
-        
+
         return products.order_by('name')
 
 
 logger = logging.getLogger(__name__)
+
 
 class SignupView(FormView):
     template_name = 'signup.html'
@@ -58,11 +59,10 @@ class SignupView(FormView):
         redirect_to = self.request.GET.get('next', '/')
         return redirect_to
 
-    
     def form_valid(self, form):
         response = super().form_valid(form)
         form.save()
-    
+
         email = form.cleaned_data.get('email')
         raw_password = form.cleaned_data.get('password1')
         logger.info(
@@ -143,7 +143,7 @@ def add_to_basket(request):
             user = None
         basket = models.Basket.objects.create(user=user)
         request.session['basket_id'] = basket.id
-    
+
     basketline, created = models.Basketline.objects.get_or_create(
         basket=basket, product=product
     )
@@ -155,3 +155,26 @@ def add_to_basket(request):
     return HttpResponseRedirect(
         reverse('product', args=(product.slug,))
     )
+
+
+def manage_basket(request):
+    if not request.basket:
+        return render(request, 'basket.html', {'formset': None})
+
+    if request.method == 'POST':
+        formset = forms.BasketlineFormSet(
+            request.POST, instance=request.basket
+        )
+
+        if formset.is_valid():
+            formset.save()
+
+    else:
+        formset = forms.BasketlineFormSet(
+            instance=request.basket
+        )
+
+    if request.basket.is_empty():
+        return render(request, 'basket.html', {'formset': None})
+
+    return render(request, 'basket.html', {'formset': formset})
