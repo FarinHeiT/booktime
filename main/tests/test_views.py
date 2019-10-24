@@ -1,10 +1,12 @@
-from django.test import TestCase
-from django.urls import reverse
 from decimal import Decimal
-from django.contrib import auth
 from unittest.mock import patch
 
+from django.contrib import auth
+from django.test import TestCase
+from django.urls import reverse
+
 from main import forms, models
+
 
 # Create your tests here.
 class TestPage(TestCase):
@@ -27,7 +29,6 @@ class TestPage(TestCase):
         self.assertContains(response, 'BookTime')
         self.assertIsInstance(response.context['form'], forms.ContactForm)
 
-
     def test_products_page_returns_acive(self):
         models.Product.objects.create(
             name='Joker',
@@ -41,7 +42,7 @@ class TestPage(TestCase):
             active=False,
         )
         response = self.client.get(
-            reverse('products', kwargs={'tag':'all'})
+            reverse('products', kwargs={'tag': 'all'})
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'BookTime')
@@ -65,7 +66,7 @@ class TestPage(TestCase):
             price=Decimal('15.00')
         )
         response = self.client.get(
-            reverse('products', kwargs={'tag':'opensource'})
+            reverse('products', kwargs={'tag': 'opensource'})
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'BookTime')
@@ -81,7 +82,6 @@ class TestPage(TestCase):
             list(product_list),
         )
 
-
     def test_user_signup_page_loads_correctly(self):
         response = self.client.get(reverse('signup'))
         self.assertEqual(response.status_code, 200)
@@ -90,7 +90,6 @@ class TestPage(TestCase):
         self.assertIsInstance(
             response.context['form'], forms.UserCreationForm
         )
-
 
     def test_user_signup_page_submission_works(self):
         post_data = {
@@ -116,7 +115,6 @@ class TestPage(TestCase):
         )
         mock_send.assert_called_once()
 
-
     def test_user_signup_page_bad_submission(self):
         post_data = {
             'email': 'test@domain.com',
@@ -128,7 +126,6 @@ class TestPage(TestCase):
         # Escaping single quotation mark
         self.assertContains(response, "The two password fields didn&#39;t match.")
 
-
     def test_user_login_page_loads_correctly(self):
         response = self.client.get(reverse('login'))
         self.assertEqual(response.status_code, 200)
@@ -137,7 +134,6 @@ class TestPage(TestCase):
         self.assertIsInstance(
             response.context['form'], forms.AuthenticationForm
         )
-
 
     def test_user_login_page_submission_works(self):
         #  creating test user
@@ -162,7 +158,6 @@ class TestPage(TestCase):
             auth.get_user(self.client).is_authenticated
         )
 
-
     def test_user_login_page_bad_submission(self):
         #  creating test user
 
@@ -179,7 +174,6 @@ class TestPage(TestCase):
         self.assertFalse(
             auth.get_user(self.client).is_authenticated
         )
-
 
     def test_address_list_page_returns_only_owned(self):
         user1 = models.User.objects.create_user(
@@ -216,7 +210,6 @@ class TestPage(TestCase):
             list(address_list),
         )
 
-
     def test_address_create_stores_user(self):
         user1 = models.User.objects.create_user(
             'user1', 'topsecret'
@@ -245,13 +238,13 @@ class TestPage(TestCase):
         j = models.Product.objects.create(
             name='Joker',
             slug='joker',
-            price= Decimal('10.00'),
+            price=Decimal('10.00'),
         )
 
         b = models.Product.objects.create(
             name='Batman',
             slug='batman',
-            price= Decimal('15.00'),
+            price=Decimal('15.00'),
         )
 
         self.client.force_login(user1)
@@ -281,3 +274,42 @@ class TestPage(TestCase):
             ).count(),
             2,
         )
+
+    def test_add_to_basket_login_merge_works(self):
+        user1 = models.User.objects.create_user(
+            'user1@a.com', 'topsecret'
+        )
+
+        j = models.Product.objects.create(
+            name='Joker',
+            slug='joker',
+            price=Decimal('10.00'),
+        )
+
+        b = models.Product.objects.create(
+            name='Batman',
+            slug='batman',
+            price=Decimal('15.00'),
+        )
+
+        basket = models.Basket.objects.create(user=user1)
+        models.Basketline.objects.create(
+            basket=basket, product=j, quantity=2
+        )
+        response = self.client.get(
+            reverse('add_to_basket'), {'product_id': b.id}
+        )
+        response = self.client.post(
+            reverse('login'),
+            {'email': 'user1@a.com', 'password': 'topsecret'},
+        )
+
+        self.assertTrue(
+            auth.get_user(self.client).is_authenticated
+        )
+
+        self.assertTrue(
+            models.Basket.objects.filter(user=user1).exists()
+        )
+        basket = models.Basket.objects.get(user=user1)
+        self.assertEqual(basket.count(), 3)
