@@ -10,6 +10,7 @@ from django.core.mail import send_mail
 from django.forms import inlineformset_factory
 
 from . import models
+from . import widgets
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +95,7 @@ BasketlineFormSet = inlineformset_factory(
     models.Basketline,
     fields=('quantity',),
     extra=0,
+    widgets={'quantity': widgets.PlusMinusNumberInput()},
 )
 
 

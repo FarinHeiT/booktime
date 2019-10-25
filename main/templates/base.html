@@ -43,8 +43,13 @@
 
     {% block content %}
     {% endblock content %}
-    
+    <script
+  src="https://code.jquery.com/jquery-3.4.1.js"
+  integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
+  crossorigin="anonymous"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    {% block js %}
+    {% endblock %}
 </body>
 
 </html>
