@@ -3,7 +3,6 @@ from django.views.generic import DetailView, TemplateView
 from main import views, models, forms
 from django.contrib.auth import views as auth_views
 
-
 urlpatterns = [
     path('about-us/', TemplateView.as_view(template_name='about_us.html'), name='about_us'),
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
@@ -11,7 +10,7 @@ urlpatterns = [
     path(
         'products/<slug:tag>/',
         views.ProductListView.as_view(),
-        name = 'products',
+        name='products',
     ),
     path(
         'product/<slug:slug>/',
@@ -53,4 +52,14 @@ urlpatterns = [
         name='add_to_basket',
     ),
     path('basket/', views.manage_basket, name='basket'),
+    path(
+        'order/address_select/',
+        views.AddressSelectionView.as_view(),
+        name='address_select'
+    ),
+    path(
+        'order/done/',
+        TemplateView.as_view(template_name='order_done.html'),
+        name='checkout_done'
+    ),
 ]
