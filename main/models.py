@@ -214,6 +214,7 @@ class Basket(models.Model):
         self.save()
         return order
 
+
 class Basketline(models.Model):
     basket = models.ForeignKey(Basket, on_delete=models.CASCADE)
     product = models.ForeignKey(

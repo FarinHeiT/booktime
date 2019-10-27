@@ -4,6 +4,7 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
 from . import models
 
+
 # Register your models here.
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'is_stock', 'price')
@@ -12,6 +13,7 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     prepopulated_fields = {'slug': ('name',)}
     autocomplete_fields = ('tags',)
+
 
 admin.site.register(models.Product, ProductAdmin)
 
@@ -22,21 +24,27 @@ class ProductTagAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     prepopulated_fields = {'slug': ('name',)}
 
+
 admin.site.register(models.ProductTag, ProductTagAdmin)
 
 
 class ProductImageAdmin(admin.ModelAdmin):
     list_display = ('thumbnail_tag', 'product_name')
     search_fields = ('product_name',)
+
     def thumbnail_tag(self, obj):
         if obj.thumbnail:
             return format_html(
-            '<img src="%s"/>' % obj.thumbnail.url
+                '<img src="%s"/>' % obj.thumbnail.url
             )
         return "-"
+
     thumbnail_tag.short_description = "Thumbnail"
+
     def product_name(self, obj):
         return obj.product.name
+
+
 admin.site.register(models.ProductImage, ProductImageAdmin)
 
 
@@ -82,3 +90,58 @@ class UserAdmin(DjangoUserAdmin):
     )
     search_fields = ("email", "first_name", "last_name")
     ordering = ("email",)
+
+
+class BasketlineInline(admin.TabularInline):
+    model = models.Basketline
+    raw_id_fields = ('product',)
+
+
+@admin.register(models.Basket)
+class BasketAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'status', 'count')
+    list_editable = ('status',)
+    list_filter = ('status',)
+    inlines = (BasketlineInline,)
+
+
+class OrderLineInline(admin.TabularInline):
+    model = models.OrderLine
+    raw_id_fields = ('product',)
+
+
+@admin.register(models.Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'status')
+    list_editable = ('status',)
+    list_filter = ('status', 'shipping_country', 'date_added')
+    inlines = (OrderLineInline,)
+    fieldsets = (
+        (None, {'fields': ('user', 'status')}),
+        (
+            'Billing info',
+            {
+                'fields': (
+                    'billing_name',
+                    'billing_address1',
+                    'billing_address2',
+                    'billing_zip_code',
+                    'billing_city',
+                    'billing_country',
+                )
+            },
+        ),
+        (
+            'Shipping info',
+            {
+                'fields': (
+                    'shipping_name',
+                    'shipping_address1',
+                    'shipping_address2',
+                    'shipping_zip_code',
+                    'shipping_city',
+                    'shipping_country',
+                )
+            },
+        ),
+    )
