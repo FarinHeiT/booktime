@@ -22,7 +22,9 @@ test('ImageBox switches images correctly', ()=>{
 
     const currentImage = wrapper.find('.current-image > img').
         first().prop('src');
+
     wrapper.find('div.image').at(2).find('img').simulate('click');
+
     const newImage = wrapper.find('.current-image > img').
         first().prop('src');
 

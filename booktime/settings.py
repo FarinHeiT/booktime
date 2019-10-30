@@ -37,11 +37,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'main.apps.MainConfig',
     'webpack_loader',
+    'django_extensions',
+    # 'debug_toolbar',
+    'django_tables2',
+    'widget_tweaks',
+    'main.apps.MainConfig',
 ]
 
+# For django_tables2
+DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap.html'
+
 MIDDLEWARE = [
+    # 'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -51,6 +59,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'main.middlewares.basket_middleware',
 ]
+
+# For Django Toolbar
+INTERNAL_IPS = ['127.0.0.1']
 
 ROOT_URLCONF = 'booktime.urls'
 

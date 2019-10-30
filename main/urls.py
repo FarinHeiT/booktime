@@ -62,4 +62,9 @@ urlpatterns = [
         TemplateView.as_view(template_name='order_done.html'),
         name='checkout_done'
     ),
+    path(
+        'order-dashboard/',
+        views.OrderView.as_view(),
+        name='order_dashboard',
+    ),
 ]
