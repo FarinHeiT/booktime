@@ -4,14 +4,15 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from datetime import datetime, timedelta
 import logging
 from django.db.models.functions import TruncDay
-from django.db.models import  Avg, Count, Min, Sum
+from django.db.models import Avg, Count, Min, Sum
 from django.urls import path
 from django.template.response import TemplateResponse
 
 from . import models
 
+logger = logging.getLogger(__name__)
 
-# Register your models here.
+
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'is_stock', 'price')
     list_filter = ('active', 'is_stock', 'date_updated')
@@ -36,13 +37,6 @@ class DispatchersProductAdmin(ProductAdmin):
     readonly_fields = ('description', 'price', 'tags', 'active')
     prepopulated_fields = {}
     autocomplete_fields = ()
-
-
-class ProductTagAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')
-    list_filter = ('active',)
-    search_fields = ('name',)
-    prepopulated_fields = {'slug': ('name',)}
 
 
 class ProductTagAdmin(admin.ModelAdmin):
@@ -205,7 +199,7 @@ class CentralOfficeOrderAdmin(admin.ModelAdmin):
         (
             'Billing info',
             {
-                'fields': (   
+                'fields': (
                     'billing_name',
                     'billing_address1',
                     'billing_address2',
@@ -218,7 +212,7 @@ class CentralOfficeOrderAdmin(admin.ModelAdmin):
         (
             'Shipping info',
             {
-                'fields': (   
+                'fields': (
                     'shipping_name',
                     'shipping_address1',
                     'shipping_address2',
@@ -228,7 +222,7 @@ class CentralOfficeOrderAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        
+
     )
 
 
@@ -287,13 +281,13 @@ class ReportingColoredAdminSite(ColoredAdminSite):
         starting_day = datetime.now() - timedelta(days=180)
         order_data = (
             models.Order.objects.filter(
-                date_added_gt=starting_day
+                date_added__gt=starting_day
             )
-            .annotate(
+                .annotate(
                 day=TruncDay('date_added')
             )
-            .values('day')
-            .annotate(c=Count('id'))
+                .values('day')
+                .annotate(c=Count('id'))
         )
         labels = [
             x['day'].strftime('%Y-%m-%d') for x in order_data
@@ -330,30 +324,31 @@ class OwnersAdminSite(ReportingColoredAdminSite):
 
     def has_permission(self, request):
         return (
-            request.user.is_active and request.user.is_superuser
+                request.user.is_active and request.user.is_superuser
         )
 
 
 class CentralOfficeAdminSite(ReportingColoredAdminSite):
-    site_header = 'BookTIme central office administration'
+    site_header = 'BookTime central office administration'
     site_header_color = 'purple'
     module_caption_color = 'pink'
 
     def has_permission(self, request):
         return (
-            request.user.is_active and request.user.is_employee
+                request.user.is_active and request.user.is_employee
         )
 
 
 class DispatchersAdminSite(ColoredAdminSite):
-    site_header = 'BookTIme central dispatch administration'
+    site_header = 'BookTime central dispatch administration'
     site_header_color = 'green'
     module_caption_color = 'lightgreen'
 
     def has_permission(self, request):
         return (
-            request.user.is_active and request.user.is_dispatcher
+                request.user.is_active and request.user.is_dispatcher
         )
+
 
 main_admin = OwnersAdminSite()
 main_admin.register(models.Product, ProductAdmin)
