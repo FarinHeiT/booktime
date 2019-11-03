@@ -300,6 +300,7 @@ class ReportingColoredAdminSite(ColoredAdminSite):
             labels=labels,
             values=values,
         )
+
         return TemplateResponse(
             request, 'orders_per_day.html', context
         )
