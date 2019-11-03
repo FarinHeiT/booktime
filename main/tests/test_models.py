@@ -3,6 +3,7 @@ from django.test import TestCase
 from main import models
 from main import factories
 
+
 class TestModel(TestCase):
     def test_active_manager_works(self):
         factories.ProductFactory.create_batch(2, active=True)
@@ -43,4 +44,3 @@ class TestModel(TestCase):
         lines = order.lines.all()
         self.assertEqual(lines[0].product, p1)
         self.assertEqual(lines[1].product, p2)
-
