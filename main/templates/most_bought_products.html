@@ -1,0 +1,47 @@
+{% extends 'admin/base_site.html' %}
+
+{% block extrahead %}
+    <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"
+            integrity="sha256-Uv9BNBucvCPipKQ2NS9wYpJmi8DTOEfTA/nH2aoJALw="
+            crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block content %}
+    <p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit" value="Set period">
+    </form>
+    </p>
+    <canvas id="myChart" width="900" height="400"></canvas>
+    <script>
+        var ctx = document.getElementById('myChart');
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ labels|safe }},
+                datasets: [
+                    {
+                        label: '№ of purchases',
+                        backgroundColor: 'blue',
+                        data: {{ values|safe }}
+                    }
+                ]
+            },
+            options: {
+                responsive: false,
+                scales: {
+                    yAxes: [
+                        {
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }
+                    ]
+                }
+            }
+        });
+    </script>
+{% endblock %}
