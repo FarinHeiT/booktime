@@ -14,6 +14,22 @@ from . import models
 logger = logging.getLogger(__name__)
 
 
+def make_active(self, request, queryset):
+    queryset.update(active=True)
+
+
+make_active.short_description = 'Mark selected items as active'
+
+
+def make_inactive(self, request, queryset):
+    queryset.update(active=False)
+
+
+make_inactive.short_description = (
+    'Mark selected items as inactive'
+)
+
+
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'is_stock', 'price')
     list_filter = ('active', 'is_stock', 'date_updated')
@@ -33,6 +49,7 @@ class ProductAdmin(admin.ModelAdmin):
         else:
             return {}
 
+    actions = [make_active, make_inactive]
 
 class DispatchersProductAdmin(ProductAdmin):
     readonly_fields = ('description', 'price', 'tags', 'active')
@@ -330,8 +347,8 @@ class ReportingColoredAdminSite(ColoredAdminSite):
                     models.OrderLine.objects.filter(
                         order__date_added__gt=starting_day
                     )
-                    .values('product__name')
-                    .annotate(c=Count('id'))
+                        .values('product__name')
+                        .annotate(c=Count('id'))
                 )
                 logger.info(
                     'most_bought_products query: %s', data.query
