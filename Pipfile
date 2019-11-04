@@ -22,6 +22,8 @@ django-tables2 = "*"
 django-filter = "*"
 django-widget-tweaks = "*"
 djangorestframework = "*"
+weasyprint = "*"
+cairo = "*"
 
 [requires]
 python_version = "3.7"
