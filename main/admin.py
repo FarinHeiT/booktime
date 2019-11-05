@@ -418,19 +418,11 @@ class InvoiceMixin:
                 base_url=request.build_absolute_uri(),
             )
 
-            result = html.write_pdf()
-
             response = HttpResponse(
                 content_type='application/pdf'
             )
-            response['Content-Disposition'] = 'inline; filename=invoice.pdf'
-            response['Content-Transfer-Encoding'] = 'binary'
-            with tempfile.NamedTemporaryFile(delete=True) as output:
-                output.write(result)
-                output.flush()
-                output = open(output.name, 'rb')
-                binary_pdf = output.read()
-                response.write(binary_pdf)
+
+            result = html.write_pdf(response)
 
             return response
 
