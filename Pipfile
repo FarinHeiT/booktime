@@ -24,6 +24,7 @@ django-widget-tweaks = "*"
 djangorestframework = "*"
 weasyprint = "*"
 cairo = "*"
+aioredis = "*"
 
 [requires]
 python_version = "3.7"

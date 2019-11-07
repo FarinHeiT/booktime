@@ -6,6 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 from unittest.mock import patch
 
+
 class TestAdminView(TestCase):
     def test_most_bought_products(self):
         products = [
@@ -101,9 +102,8 @@ class TestAdminView(TestCase):
             content = response.content.decode('utf8')
 
             with open(
-                'main/fixtures/invoice_test_order.html'
+                    'main/fixtures/invoice_test_order.html'
             ) as fixture:
                 expected_content = fixture.read()
 
             self.assertHTMLEqual(content, expected_content)
-
