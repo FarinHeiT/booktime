@@ -1,0 +1,34 @@
+{% load static %}
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Chat Rooms</title>
+    <script
+        src="{% static 'js/reconnecting-eventsource.js' %}"
+        charset='utf-8'></script>
+</head>
+<body>
+    <h1>Customer chat</h1>
+    <div id="notification-area"></div>
+    <script>
+        var source = new ReconnectingEventSource('/customer-service/notify/');
+        source.addEventListener('message', function (e) {
+            document
+                .getElementById('notification-area')
+                .innerHTML = '';
+            var data = JSON.parse(e.data);
+            var html;
+            for (var i = 0; i < data.length; i++) {
+                html = '<div><a href="' + data[i]['link'] + '">' +
+                        data[i]['text'] + '</a></div>';
+                document
+                    .getElementById('notification-area')
+                    .innerHTML += html;
+            }
+        }, false);
+    </script>
+</body>
+</html>
