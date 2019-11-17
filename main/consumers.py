@@ -6,9 +6,8 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from . import models
 import asyncio
 import json
-from channels.exceptions import StopConsumer
-from channels.generic.http import AsyncHttpConsumer
 from django.urls import reverse
+from channels.exceptions import StopConsumer
 
 logger = logging.getLogger(__name__)
 
@@ -132,83 +131,71 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json(event)
 
 
-class ChatNotifyConsumer(AsyncHttpConsumer):
+
+class ChatNotifyConsumer(AsyncJsonWebsocketConsumer):
     def is_employee_func(self, user):
         return not user.is_anonymous and user.is_employee
 
-    async def handle(self, body):
+    async def connect(self):
+        await self.accept()
+
         is_employee = await database_sync_to_async(
             self.is_employee_func
-        )(self.scope['user'])
+        )(self.scope["user"])
 
         if is_employee:
             logger.info(
-                f'Opening notify stream for '
-                f'user {self.scope.get("user")} '
-                f'and params {self.scope.get["query_string"]}'
+                "Opening notify stream for user %s and params %s",
+                self.scope.get("user"),
+                self.scope.get("query_string"),
             )
-            await self.send_headers(
-                headers=[
-                    ('Cache-Control', 'no-cache'),
-                    ('Content-Type', 'text/event-stream'),
-                    ('Transfer-Encoding', 'chunked'),
-                ]
-            )
-            self.is_streaming = True
-            self.no_poll = (
-                self.scope.get('query_string') == 'nopoll'
-            )
-            asyncio.get_event_loop().create_task(self.stream())
         else:
             logger.info(
-                f'Unauthorized notify stream for '
-                f'user {self.scope.get("user")} '
-                f'and params {self.scope.get["query_string"]}'
+                "Unauthorized notify stream for user %s and params %s",
+                self.scope.get("user"),
+                self.scope.get("query_string"),
             )
-            raise StopConsumer('Unauthorized')
+            raise StopConsumer("Unauthorized")
 
-    async def stream(self):
+    async def receive(self, text_data=None, bytes_data=None):
         r_conn = await aioredis.create_redis('redis://localhost')
-        while self.is_streaming:
-            active_chats = await r_conn.keys(
-                'customer-service_*'
-            )
-            presences = {}
-            for i in active_chats:
-                _, order_id, user_email = i.decode('utf8').split('_')
-                if order_id in presences:
-                    presences[order_id].append(user_email)
-                else:
-                    presences[order_id] = [user_email]
-
-            data = []
-            for order_id, emails in presences.items():
-                data.append(
-                    {
-                        'link': reverse(
-                            'cs_chat',
-                            kwargs={'order_id': order_id}
-                        ),
-                        'text': f'{order_id} ({"".join(emails)})'
-                    }
-                )
-
-                payload = f'data: {json.dumps(data)}\n\n'
-                logger.info(
-                    f'Broadcasting presence info to user {self.scope["user"]}'
-                )
-                if self.no_poll:
-                    await self.send_body(payload.encode('utf-8'))
-                    self.is_streaming = False
-                else:
-                    await self.send_body(
-                        payload.encode('utf-8'),
-                        more_body=self.is_streaming,
-                    )
-                    await asyncio.sleep(5)
-
-    async def disconnect(self):
-        logger.info(
-            f'Closing notify stream for user {self.scope.get("user")}'
+        active_chats = await r_conn.keys(
+            "customer-service_*"
         )
-        self.is_streaming = False
+
+        presences = {}
+        for i in active_chats:
+            _, order_id, user_email = i.decode("utf8").split(
+                "_"
+            )
+            if order_id in presences:
+                presences[order_id].append(user_email)
+            else:
+                presences[order_id] = [user_email]
+
+        data = []
+        for order_id, emails in presences.items():
+            data.append(
+                {
+                    "link": reverse(
+                        "cs_chat",
+                        kwargs={"order_id": order_id}
+                    ),
+                    "text": "%s (%s)"
+                    % (order_id, ", ".join(emails)),
+                }
+            )
+
+        payload = data
+        logger.info(
+            "Broadcasting presence info to user %s",
+            self.scope["user"],
+        )
+
+        await self.send_json(payload)
+
+    async def disconnect(self, close_code):
+        logger.info(
+            "Closing notify stream for user %s",
+            self.scope.get("user"),
+        )

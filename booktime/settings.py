@@ -25,13 +25,14 @@ SECRET_KEY = '-)d-1)k%o=jja^*0l#wxlbws8nr+2&jssr8qn!m!ruux0del9m'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
 
 INSTALLED_APPS = [
     'channels',
+    'debug_toolbar',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -40,7 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'webpack_loader',
     'django_extensions',
-    # 'debug_toolbar',
     'django_tables2',
     'widget_tweaks',
     'rest_framework',
@@ -81,7 +81,7 @@ REST_FRAMEWORK = {
 DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap.html'
 
 MIDDLEWARE = [
-    # 'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
