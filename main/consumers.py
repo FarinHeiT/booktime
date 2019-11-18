@@ -157,45 +157,48 @@ class ChatNotifyConsumer(AsyncJsonWebsocketConsumer):
             )
             raise StopConsumer("Unauthorized")
 
-    async def receive(self, text_data=None, bytes_data=None):
+        self.streaming = True
+
         r_conn = await aioredis.create_redis('redis://localhost')
-        active_chats = await r_conn.keys(
-            "customer-service_*"
-        )
-
-        presences = {}
-        for i in active_chats:
-            _, order_id, user_email = i.decode("utf8").split(
-                "_"
-            )
-            if order_id in presences:
-                presences[order_id].append(user_email)
-            else:
-                presences[order_id] = [user_email]
-
-        data = []
-        for order_id, emails in presences.items():
-            data.append(
-                {
-                    "link": reverse(
-                        "cs_chat",
-                        kwargs={"order_id": order_id}
-                    ),
-                    "text": "%s (%s)"
-                    % (order_id, ", ".join(emails)),
-                }
+        while self.streaming:
+            active_chats = await r_conn.keys(
+                "customer-service_*"
             )
 
-        payload = data
-        logger.info(
-            "Broadcasting presence info to user %s",
-            self.scope["user"],
-        )
+            presences = {}
+            for i in active_chats:
+                _, order_id, user_email = i.decode("utf8").split(
+                    "_"
+                )
+                if order_id in presences:
+                    presences[order_id].append(user_email)
+                else:
+                    presences[order_id] = [user_email]
 
-        await self.send_json(payload)
+            data = []
+            for order_id, emails in presences.items():
+                data.append(
+                    {
+                        "link": reverse(
+                            "cs_chat",
+                            kwargs={"order_id": order_id}
+                        ),
+                        "text": "%s (%s)"
+                                % (order_id, ", ".join(emails)),
+                    }
+                )
+
+            payload = data
+            logger.info(
+                "Broadcasting presence info to user %s",
+                self.scope["user"],
+            )
+
+            await self.send_json(payload)
 
     async def disconnect(self, close_code):
         logger.info(
             "Closing notify stream for user %s",
             self.scope.get("user"),
         )
+        self.streaming = False

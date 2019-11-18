@@ -110,13 +110,13 @@ class TestConsumers(TestCase):
     def test_chat_presence_works(self):
         def init_db():
             user = factories.UserFactory(
-                email="user@site.com",
+                email="user2@site.com",
                 first_name="John",
                 last_name="Smith",
             )
             order = factories.OrderFactory(user=user)
             cs_user = factories.UserFactory(
-                email="customerservice@booktime.domain",
+                email="customerservice2@booktime.domain",
                 first_name="Adam",
                 last_name="Ford",
                 is_staff=True,
@@ -149,50 +149,25 @@ class TestConsumers(TestCase):
             )
             await communicator.disconnect()
 
-            communicator = HttpCommunicator(
+            communicator = WebsocketCommunicator(
                 consumers.ChatNotifyConsumer,
-                "GET",
-                "/customer-service/notify/",
+                "ws/customer-service/notify/",
             )
             communicator.scope["user"] = notify_user
-            communicator.scope["query_string"] = "nopoll"
 
-            response = await communicator.get_response()
-            self.assertTrue(
-                response["body"].startswith(b"data: ")
-            )
-            payload = response["body"][6:]
-            data = json.loads(payload.decode("utf8"))
-            self.assertEquals(
-                data,
+            connected, _ = await communicator.connect()
+            self.assertTrue(connected)
+
+            response = await communicator.receive_json_from()
+
+            self.assertEqual(
+                response,
                 [
                     {
-                        "link": "/customer-service/%d/" % order.id,
-                        "text": "%d (user@site.com)" % order.id,
+                        "link": f"/customer-service/{order.id}/",
+                        "text": f"{order.id} (user2@site.com)",
                     }
-                ],
-                "expecting someone in the room but noone found",
-            )
-
-            await asyncio.sleep(10)
-
-            communicator = HttpCommunicator(
-                consumers.ChatNotifyConsumer,
-                "GET",
-                "/customer-service/notify/",
-            )
-            communicator.scope["user"] = notify_user
-            communicator.scope["query_string"] = "nopoll"
-            response = await communicator.get_response()
-            self.assertTrue(
-                response["body"].startswith(b"data: ")
-            )
-            payload = response["body"][6:]
-            data = json.loads(payload.decode("utf8"))
-            self.assertEquals(
-                data,
-                [],
-                "expecting noone in the room but someone found",
+                ]
             )
 
         loop = asyncio.get_event_loop()
