@@ -7,28 +7,61 @@
     <script
       src="{% static "js/reconnecting-websocket.min.js" %}"
       charset="utf-8"></script>
+      <link rel='stylesheet' href="{% static 'css/bootstrap.min.css' %}">
   </head>
   <body>
     <h1>Customer chats</h1>
-    <div id="notification-area"></div>
+    <div id="notification-area">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Client</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+
+          </tbody>
+        </table>
+    </div>
+
+    <template id="user">
+        <tr id='table-row'>
+          <th id='num' scope="row">1</th>
+          <td id='link'>Mark</td>
+          <td id='status'>Awaiting</td>
+        </tr>
+    </template>
+
     <script>
 
     var chatSocket = new ReconnectingWebSocket(
       'ws://' + window.location.host + '/ws/customer-service/notify/'
     );
+
     chatSocket.onmessage = function (e) {
         document
-            .getElementById("notification-area")
+            .getElementById("table-body")
             .innerHTML = "";
-        var data = JSON.parse(e.data)
-        console.log(data[0])
-        var html;
+        var data = JSON.parse(e.data);
+
         for (var i = 0; i < data.length; i++) {
-          html = '<div><a href="' + data[i]['link'] + '">' + data[i]['text'] +
-              '</a></div>';
+
+          var temp = document.querySelector('#user');
+          var clon = temp.content.cloneNode(true);
+
+          clon.querySelector('#num').innerHTML = i + 1;
+          clon.querySelector('#link').innerHTML = `<a href='${data[i]['link']}'>${data[i]['text']}</a>`;
+            console.log(data);
+          if (data[i]['status'] === 'Operator') {
+            clon.querySelector('#status').innerHTML = 'Ongoing';
+            clon.querySelector('#table-row').classList.add('table-success');
+          } else {
+            clon.querySelector('#status').innerHTML = 'Awaiting';
+          }
           document
-            .getElementById("notification-area")
-            .innerHTML += html;
+            .getElementById("table-body").appendChild(clon)
         }
     };
 
@@ -37,9 +70,6 @@
       console.error(e)
     };
 
-    setInterval(function () {
-      chatSocket.send(JSON.stringify({'type': 'check'}));
-    }, 5000);
     </script>
   </body>
 </html>

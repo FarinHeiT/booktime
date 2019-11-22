@@ -37,20 +37,23 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 "customer-service_%s" % self.order_id
         )
         authorized = False
+        self.employee = False
+
         if self.scope["user"].is_anonymous:
             await self.close()
 
-        user_type = await database_sync_to_async(
+        self.user_type = await database_sync_to_async(
             self.get_user_type
         )(self.scope["user"], self.order_id)
 
-        if user_type == ChatConsumer.EMPLOYEE:
+        if self.user_type == ChatConsumer.EMPLOYEE:
             logger.info(
                 "Opening chat stream for employee %s",
                 self.scope["user"],
             )
             authorized = True
-        elif user_type == ChatConsumer.CLIENT:
+
+        elif self.user_type == ChatConsumer.CLIENT:
             logger.info(
                 "Opening chat stream for client %s",
                 self.scope["user"],
@@ -112,10 +115,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             )
         elif typ == "heartbeat":
             await self.r_conn.setex(
-                "%s_%s"
-                % (
+                "{}_{}_{}".format(
                     self.room_group_name,
                     self.scope["user"].email,
+                    'Operator' if self.user_type == 2 else 'Customer'
                 ),
                 10,
                 "1",
@@ -129,7 +132,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def chat_leave(self, event):
         await self.send_json(event)
-
 
 
 class ChatNotifyConsumer(AsyncJsonWebsocketConsumer):
@@ -159,7 +161,7 @@ class ChatNotifyConsumer(AsyncJsonWebsocketConsumer):
 
         self.streaming = True
 
-        r_conn = await aioredis.create_redis('redis://localhost')
+        r_conn = await aioredis.create_redis_pool('redis://localhost')
         while self.streaming:
             active_chats = await r_conn.keys(
                 "customer-service_*"
@@ -167,34 +169,39 @@ class ChatNotifyConsumer(AsyncJsonWebsocketConsumer):
 
             presences = {}
             for i in active_chats:
-                _, order_id, user_email = i.decode("utf8").split(
+                _, order_id, user_email, status = i.decode("utf8").split(
                     "_"
                 )
-                if order_id in presences:
-                    presences[order_id].append(user_email)
-                else:
-                    presences[order_id] = [user_email]
 
-            data = []
-            for order_id, emails in presences.items():
-                data.append(
+                if order_id in presences:
+                    presences[order_id]['emails'].append(user_email)
+                    # If there already is an operator - do not change the state of chat
+                    if presences[order_id]['status'] != 'Operator':
+                        presences[order_id]['status'] = status
+                else:
+                    presences[order_id] = {'emails': [user_email], 'status': status}
+
+            payload = []
+            for order_id, data in presences.items():
+                payload.append(
                     {
                         "link": reverse(
                             "cs_chat",
                             kwargs={"order_id": order_id}
                         ),
                         "text": "%s (%s)"
-                                % (order_id, ", ".join(emails)),
+                                % (order_id, ", ".join(data['emails'])),
+                        "status": data['status'],
                     }
                 )
 
-            payload = data
             logger.info(
                 "Broadcasting presence info to user %s",
                 self.scope["user"],
             )
 
             await self.send_json(payload)
+            await asyncio.sleep(5)
 
     async def disconnect(self, close_code):
         logger.info(
