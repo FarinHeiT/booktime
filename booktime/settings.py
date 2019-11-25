@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django_tables2',
     'widget_tweaks',
     'rest_framework',
+    'rest_framework.authtoken',
     'main.apps.MainConfig',
 ]
 
@@ -64,6 +65,7 @@ CHANNEL_LAYERS = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':
         ('rest_framework.authentication.SessionAuthentication',
+         'rest_framework.authentication.TokenAuthentication',
          'rest_framework.authentication.BasicAuthentication'),
 
     'DEFAULT_PERMISSION_CLASSES':
