@@ -1,16 +1,22 @@
-import aioredis
-import logging
-from django.shortcuts import get_object_or_404
-from channels.db import database_sync_to_async
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from . import models
 import asyncio
-import json
-from django.urls import reverse
+import logging
+
+import aioredis
+import aiohttp
+from channels.db import database_sync_to_async
 from channels.exceptions import StopConsumer
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.generic.http import AsyncHttpConsumer
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+
+from . import models
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('consumers.log')
+fh.setLevel(logging.DEBUG)
+logger.addHandler(fh)
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     EMPLOYEE = 2
@@ -209,3 +215,44 @@ class ChatNotifyConsumer(AsyncJsonWebsocketConsumer):
             self.scope.get("user"),
         )
         self.streaming = False
+
+
+class OrderTrackerConsumer(AsyncHttpConsumer):
+
+    @database_sync_to_async
+    def verify_user(self, user, order_id):
+        order = get_object_or_404(models.Order, pk=order_id)
+        return order.user == user
+
+    async def query_remote_server(self, order_id):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                'https://pastebin.com/raw/b2Niddnk'
+            ) as resp:
+                return await resp.read()
+
+    async def handle(self, body):
+        self.order_id = self.scope['url_route']['kwargs'][
+            'order_id'
+        ]
+
+        is_authorized = await self.verify_user(self.scope['user'], self.order_id)
+
+        if is_authorized:
+            logger.info(
+                f'Order tracking request for user '
+                f'{self.scope.get("user")} and'
+                f' order {self.order_id}',
+            )
+            payload = await self.query_remote_server(self.order_id)
+            logger.info(
+                f'Order tracking response {payload}'
+                f' for user {self.scope.get("user")} and'
+                f' order {self.order_id}',
+            )
+            await self.send_response(200, payload)
+        else:
+            logger.error(
+                f'Unauthorized user tracking attempt. OrderID: {self.order_id}. User: {self.scope["cookies"]["username"]}'
+            )
+            raise StopConsumer()

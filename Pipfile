@@ -25,6 +25,7 @@ djangorestframework = "*"
 weasyprint = "*"
 cairo = "*"
 aioredis = "*"
+aiohttp = "*"
 
 [requires]
 python_version = "3.7"

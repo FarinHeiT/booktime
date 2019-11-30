@@ -4,3 +4,4 @@ __pycache__/
 media/
 .idea/
 node_modules/
+*.log/

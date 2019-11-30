@@ -6,6 +6,7 @@ from channels.db import database_sync_to_async
 from channels.testing import WebsocketCommunicator, HttpCommunicator
 from main import consumers
 from main import factories
+from unittest.mock import MagicMock, patch
 
 
 class TestConsumers(TestCase):
@@ -169,6 +170,48 @@ class TestConsumers(TestCase):
                     }
                 ]
             )
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(test_body())
+
+    def test_order_tracker_works(self):
+        def init_db():
+            user = factories.UserFactory(
+                email='mobiletracker@site.com'
+            )
+            order = factories.OrderFactory(user=user)
+            return user, order
+
+        async def test_body():
+            user, order = await database_sync_to_async(
+                init_db
+            )()
+
+            awaitable_requestor = asyncio.coroutine(
+                MagicMock(return_value=b'SHIPPED')
+            )
+
+            with patch.object(
+                consumers.OrderTrackerConsumer, 'query_remote_server'
+            ) as mock_requestor:
+                mock_requestor.side_effect = awaitable_requestor
+                communicator = HttpCommunicator(
+                    consumers.OrderTrackerConsumer,
+                    'GET',
+                    f'/mobile-api/my-orders/{order.id}/tracker/'
+                )
+                communicator.scope['user'] = user
+                communicator.scope['url_route'] = {
+                    'kwargs': {'order_id': order.id}
+                }
+                response = await communicator.get_response()
+                data = response['body'].decode('utf8')
+
+                mock_requestor.assert_called_once()
+                self.assertEqual(
+                    data,
+                    'SHIPPED'
+                )
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(test_body())
