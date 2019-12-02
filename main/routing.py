@@ -1,5 +1,5 @@
 from django.urls import path
-from channels.auth import AuthMiddlewareStack
+from booktime.auth import TokenGetAuthMiddlewareStack
 from . import consumers
 
 websocket_urlpatterns = [
@@ -16,6 +16,6 @@ websocket_urlpatterns = [
 http_urlpatterns = [
     path(
         "mobile-api/my-orders/<int:order_id>/tracker/",
-        AuthMiddlewareStack(consumers.OrderTrackerConsumer),
+        TokenGetAuthMiddlewareStack(consumers.OrderTrackerConsumer),
     )
 ]
